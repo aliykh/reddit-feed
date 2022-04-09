@@ -1,0 +1,18 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "REST API for reddit feed posts",
+        "title": "Reddit Feed Api",
+        "contact": {
+            "name": "Alloy",
+            "email": "aliykhoshimov@gmail.com"
+        },
+        "license": {
+            "name": "Toptal",
+            "url": "https://toptal.com"
+        },
+        "version": "1.0"
+    },
+    "basePath": "/api/v1",
+    "paths": {}
+}

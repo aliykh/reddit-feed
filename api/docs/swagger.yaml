@@ -1,0 +1,13 @@
+basePath: /api/v1
+info:
+  contact:
+    email: aliykhoshimov@gmail.com
+    name: Alloy
+  description: REST API for reddit feed posts
+  license:
+    name: Toptal
+    url: https://toptal.com
+  title: Reddit Feed Api
+  version: "1.0"
+paths: {}
+swagger: "2.0"

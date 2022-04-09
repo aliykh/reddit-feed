@@ -1,0 +1,2 @@
+mongo_addr: "mongodb://root:rootpassword@localhost:27017/"
+log_level: "debug"
