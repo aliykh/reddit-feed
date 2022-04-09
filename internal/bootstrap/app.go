@@ -29,8 +29,8 @@ type App struct {
 	//	log
 	log *log.Factory
 
-	// db
-	mongoDB *mongo.Database
+	// mongodb client
+	mongoClient *mongo.Client
 
 	//	tearDowns -> for graceful shutdown
 	tearDowns []func()
@@ -80,16 +80,14 @@ func (a *App) initMongoDb(ctx context.Context) error {
 	a.tearDowns = append(a.tearDowns, tr)
 
 	// Ping the primary
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
 	defer cancel()
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
 		tr()
 		return err
 	}
 
-	client.StartSession()
-
-	a.mongoDB = client.Database("reddit-feed")
+	a.mongoClient = client
 
 	// todo add health checker for db connection availability and also for the case when the mongo db shuts down
 
@@ -99,7 +97,7 @@ func (a *App) initMongoDb(ctx context.Context) error {
 // initHTTPServer initializes http server.
 func (app *App) initHTTPServer() error {
 
-	hs, err := server.New(app.config, app.log)
+	hs, err := server.New(app.config, app.log, app.mongoClient)
 
 	if err != nil {
 		return err

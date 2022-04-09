@@ -1,7 +1,6 @@
 package customErrors
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -10,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"reflect"
-	"strings"
 )
 
 var Trans ut.Translator
@@ -41,9 +39,6 @@ func ParseError(err error) *ErrorResponse {
 		switch {
 		case errors.Is(err, io.EOF):
 			return New(http.StatusBadRequest, err)
-		case errors.Is(err, sql.ErrNoRows) || strings.Contains(err.Error(), sql.ErrNoRows.Error()):
-			return New(http.StatusNotFound, NotFound)
-
 		default:
 			return NewInternalServerError()
 

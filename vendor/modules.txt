@@ -11,6 +11,9 @@ github.com/alecthomas/template/parse
 # github.com/aliykh/log v0.0.1
 ## explicit
 github.com/aliykh/log
+# github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
+## explicit
+github.com/dchest/uniuri
 # github.com/gin-contrib/sse v0.1.0
 github.com/gin-contrib/sse
 # github.com/gin-gonic/gin v1.7.7
@@ -77,6 +80,7 @@ github.com/opentracing/opentracing-go
 github.com/opentracing/opentracing-go/ext
 github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.9.1
+## explicit
 github.com/pkg/errors
 # github.com/qiangxue/go-env v1.0.1
 ## explicit

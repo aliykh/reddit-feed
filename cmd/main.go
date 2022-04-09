@@ -43,9 +43,13 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	go func() {
+
 		oscall := <-interruptChan
 
 		log.Printf("system call:%+v\n", oscall)
+
+		close(interruptChan)
+		signal.Stop(interruptChan)
 
 		cancel()
 	}()
