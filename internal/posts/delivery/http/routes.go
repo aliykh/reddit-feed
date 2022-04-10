@@ -12,4 +12,6 @@ func RegisterHandlers(router *gin.RouterGroup, handlers posts.Handlers)  {
 	r1Group := router.Group(path)
 	r1Group.POST("/", handlers.Create)
 
+	r1Group.GET("/generate", handlers.Generate)
+
 }

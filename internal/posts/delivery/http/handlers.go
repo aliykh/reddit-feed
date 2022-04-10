@@ -6,6 +6,7 @@ import (
 	"github.com/aliykh/reddit-feed/internal/http/server/helpers"
 	"github.com/aliykh/reddit-feed/internal/posts"
 	"github.com/aliykh/reddit-feed/internal/posts/models"
+	"github.com/aliykh/reddit-feed/pkg/pagination"
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
@@ -49,4 +50,27 @@ func (h *handlers) Create(c *gin.Context) {
 	}
 
 	helpers.RespondCreated(c, result)
+}
+
+func (h *handlers) Generate(c *gin.Context) {
+
+	pg := &pagination.Query{
+		Size: 25,
+	}
+
+	if err := c.BindQuery(pg); err != nil {
+		h.logger.Default().Error("pagination query binding err", zap.String("err", err.Error()))
+		helpers.RespondError(c, err)
+		return
+	}
+
+	res, err := h.uc.GenerateFeeds(c.Request.Context(), pg)
+
+	if err != nil {
+		h.logger.Default().Error("generate feeds", zap.String("err", err.Error()))
+		helpers.RespondError(c, err)
+		return
+	}
+
+	helpers.RespondOK(c, res)
 }

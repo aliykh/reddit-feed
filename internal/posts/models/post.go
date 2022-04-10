@@ -9,6 +9,15 @@ import (
 	"net/http"
 )
 
+type Feed struct {
+	TotalCount int64     `json:"total_count"`
+	TotalPages int     `json:"total_pages"`
+	Page       int     `json:"page"`
+	Size       int     `json:"size"`
+	HasMore    bool    `json:"has_more"`
+	Posts      []*Post `json:"posts"`
+}
+
 type Post struct {
 	Id        string `json:"id" bson:"_id,omitempty"`
 	Title     string `json:"title" bson:"title" binding:"required"`

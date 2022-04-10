@@ -5,6 +5,7 @@ import (
 	"github.com/aliykh/log"
 	"github.com/aliykh/reddit-feed/internal/posts/models"
 	"github.com/aliykh/reddit-feed/internal/posts/repository"
+	"github.com/aliykh/reddit-feed/pkg/pagination"
 )
 
 type postsUC struct {
@@ -22,4 +23,8 @@ func New(logger *log.Factory, repo repository.Repository) *postsUC {
 func (p *postsUC) Create(ctx context.Context, model *models.Post) (*models.Post, error) {
 	model.GenerateAuthorName()
 	return p.repo.Create(ctx, model)
+}
+
+func (p *postsUC) GenerateFeeds(ctx context.Context, page *pagination.Query) (*models.Feed, error)  {
+	return p.repo.GenerateFeeds(ctx, page)
 }
