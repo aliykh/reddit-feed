@@ -23,6 +23,15 @@ func New(logger *log.Factory, uc posts.UseCase) *handlers {
 	}
 }
 
+// Create godoc
+// @Summary Create - create a new post
+// @Description - create a new post
+// @Tags Posts
+// @Param params body models.Post true "body"
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Post
+// @Router /post [POST]
 func (h *handlers) Create(c *gin.Context) {
 
 	model := &models.Post{}
@@ -52,6 +61,14 @@ func (h *handlers) Create(c *gin.Context) {
 	helpers.RespondCreated(c, result)
 }
 
+// Generate godoc
+// @Summary Generate - generates a feed of posts
+// @Description returns a list of posts
+// @Tags Posts
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Feed
+// @Router /post/generate [GET]
 func (h *handlers) Generate(c *gin.Context) {
 
 	pg := &pagination.Query{

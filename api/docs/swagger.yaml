@@ -1,4 +1,49 @@
 basePath: /api/v1
+definitions:
+  models.Feed:
+    properties:
+      has_more:
+        type: boolean
+      page:
+        type: integer
+      posts:
+        items:
+          $ref: '#/definitions/models.Post'
+        type: array
+      size:
+        type: integer
+      total_count:
+        type: integer
+      total_pages:
+        type: integer
+    type: object
+  models.Post:
+    properties:
+      author:
+        type: string
+      content:
+        type: string
+      id:
+        type: string
+      link:
+        type: string
+      nsfw:
+        type: boolean
+      promoted:
+        type: boolean
+      score:
+        type: integer
+      subreddit:
+        type: string
+      title:
+        type: string
+    required:
+    - nsfw
+    - promoted
+    - score
+    - subreddit
+    - title
+    type: object
 info:
   contact:
     email: aliykhoshimov@gmail.com
@@ -9,5 +54,42 @@ info:
     url: https://toptal.com
   title: Reddit Feed Api
   version: "1.0"
-paths: {}
+paths:
+  /post:
+    post:
+      consumes:
+      - application/json
+      description: '- create a new post'
+      parameters:
+      - description: body
+        in: body
+        name: params
+        required: true
+        schema:
+          $ref: '#/definitions/models.Post'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Post'
+      summary: Create - create a new post
+      tags:
+      - Posts
+  /post/generate:
+    get:
+      consumes:
+      - application/json
+      description: returns a list of posts
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Feed'
+      summary: Generate - generates a feed of posts
+      tags:
+      - Posts
 swagger: "2.0"
