@@ -14,7 +14,6 @@ import (
 )
 
 const (
-	dbName         = "reddit-feed"
 	collectionName = "posts"
 )
 
@@ -26,10 +25,12 @@ type Repository interface {
 type repo struct {
 	logger   *log.Factory
 	dbClient *mongo.Client
+	dbName   string
 }
 
-func New(logger *log.Factory, dbClient *mongo.Client) *repo {
+func New(logger *log.Factory, dbClient *mongo.Client, dbName string) *repo {
 	return &repo{
+		dbName:   dbName,
 		logger:   logger,
 		dbClient: dbClient,
 	}
@@ -136,5 +137,5 @@ func (r *repo) GenerateFeeds(ctx context.Context, query *pagination.Query) (*mod
 }
 
 func (r *repo) getCollection() *mongo.Collection {
-	return r.dbClient.Database(dbName).Collection(collectionName)
+	return r.dbClient.Database(r.dbName).Collection(collectionName)
 }

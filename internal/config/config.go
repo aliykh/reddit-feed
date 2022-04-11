@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	defaultServerPort         = 7077
+	defaultServerPort = 7077
 )
 
 // Config represents an application configuration.
@@ -21,12 +21,15 @@ type Config struct {
 	MongoAddr string `yaml:"mongo_addr" env:"MONGO_ADDR,secret"`
 
 	LogLevel string `yaml:"log_level" env:"LOG_LEVEL"`
+
+	DatabaseName string `yaml:"db_name" env:"DATABASE_NAME"`
 }
 
 // Validate validates the application configuration.
 func (c Config) Validate() error {
 	return validation.ValidateStruct(&c,
 		validation.Field(&c.MongoAddr, validation.Required),
+		validation.Field(&c.DatabaseName, validation.Required),
 	)
 }
 
@@ -34,7 +37,7 @@ func (c Config) Validate() error {
 func Load(file string, logger log.Logger) (*Config, error) {
 	// default config
 	c := Config{
-		ServerPort:    defaultServerPort,
+		ServerPort: defaultServerPort,
 	}
 
 	// load from YAML config file

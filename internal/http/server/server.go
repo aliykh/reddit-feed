@@ -83,7 +83,7 @@ func (s *Server) setupValidators() {
 
 func (s *Server) mapHandlers() {
 
-	postRepo := repository.New(s.logger, s.dbClient)
+	postRepo := repository.New(s.logger, s.dbClient, s.cfg.DatabaseName)
 	postsUC := usecase.New(s.logger, postRepo)
 	postsHandlers := postsHttp.New(s.logger, postsUC)
 

@@ -4,6 +4,8 @@ github.com/KyleBanks/depth
 github.com/PuerkitoBio/purell
 # github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578
 github.com/PuerkitoBio/urlesc
+# github.com/acobaugh/osrelease v0.0.0-20181218015638-a93a0a55a249
+github.com/acobaugh/osrelease
 # github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
 ## explicit
 github.com/alecthomas/template
@@ -11,6 +13,8 @@ github.com/alecthomas/template/parse
 # github.com/aliykh/log v0.0.1
 ## explicit
 github.com/aliykh/log
+# github.com/davecgh/go-spew v1.1.1
+github.com/davecgh/go-spew/spew
 # github.com/dchest/uniuri v0.0.0-20200228104902-7aecb25e1fe5
 ## explicit
 github.com/dchest/uniuri
@@ -48,6 +52,9 @@ github.com/go-playground/validator/v10
 github.com/go-playground/validator/v10/translations/en
 # github.com/go-stack/stack v1.8.0
 github.com/go-stack/stack
+# github.com/golang/mock v1.6.0
+## explicit
+github.com/golang/mock/gomock
 # github.com/golang/protobuf v1.3.3
 github.com/golang/protobuf/proto
 # github.com/golang/snappy v0.0.1
@@ -82,9 +89,24 @@ github.com/opentracing/opentracing-go/log
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
+# github.com/pmezard/go-difflib v1.0.0
+github.com/pmezard/go-difflib/difflib
 # github.com/qiangxue/go-env v1.0.1
 ## explicit
 github.com/qiangxue/go-env
+# github.com/spf13/afero v1.5.1
+github.com/spf13/afero
+github.com/spf13/afero/mem
+# github.com/stretchr/testify v1.7.0
+## explicit
+github.com/stretchr/testify/assert
+github.com/stretchr/testify/require
+# github.com/strikesecurity/strikememongo v0.2.4
+## explicit
+github.com/strikesecurity/strikememongo
+github.com/strikesecurity/strikememongo/mongobin
+github.com/strikesecurity/strikememongo/monitor
+github.com/strikesecurity/strikememongo/strikememongolog
 # github.com/swaggo/files v0.0.0-20210815190702-a29dd2bc99b2
 ## explicit
 github.com/swaggo/files
@@ -201,3 +223,5 @@ golang.org/x/tools/internal/typeparams
 # gopkg.in/yaml.v2 v2.4.0
 ## explicit
 gopkg.in/yaml.v2
+# gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+gopkg.in/yaml.v3

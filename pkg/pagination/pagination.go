@@ -2,8 +2,10 @@ package pagination
 
 import "math"
 
+const defaultSize = 25
+
 type Query struct {
-	Size    int    `json:"-" form:"size"`
+	Size    int    `json:"size,omitempty" form:"size"`
 	Page    int    `json:"page,omitempty" form:"page"`
 }
 
@@ -23,6 +25,11 @@ func (q *Query) GetPage() int {
 }
 
 func (q *Query) GetSize() int {
+
+	if q.Size < 1 || q.Size > 25 {
+		return defaultSize
+	}
+
 	return q.Size
 }
 
