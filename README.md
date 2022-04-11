@@ -32,6 +32,12 @@ Run integration tests:
 make run-integration-tests
 ```
 
+### Run the app
+
+```shell
+make run
+```
+
 ### Notes
 
 - Remove test data from the cache - $go clean -testcache

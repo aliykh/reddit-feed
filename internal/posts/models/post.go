@@ -23,7 +23,7 @@ type Post struct {
 	Title     string `json:"title" bson:"title" binding:"required"`
 	Author    string `json:"author" bson:"author"`
 	Link      string `json:"link,omitempty" bson:"link,omitempty"`
-	Subreddit string `json:"subreddit" bson:"subreddit" binding:"required"`
+	Subreddit string `json:"subreddit" bson:"subreddit" binding:"required,startswith=/r/"`
 	Content   string `json:"content,omitempty" bson:"content,omitempty"`
 	Score     *int   `json:"score" bson:"score" binding:"required"`
 	Promoted  *bool  `json:"promoted" bson:"promoted" binding:"required"`
