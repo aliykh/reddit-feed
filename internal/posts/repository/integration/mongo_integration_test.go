@@ -4,6 +4,7 @@ import (
 	"context"
 	logr "github.com/aliykh/log"
 	"github.com/aliykh/reddit-feed/internal/config"
+	"github.com/aliykh/reddit-feed/internal/driver/db"
 	"github.com/aliykh/reddit-feed/internal/posts/models"
 	"github.com/aliykh/reddit-feed/internal/posts/repository"
 	"github.com/stretchr/testify/require"
@@ -17,9 +18,14 @@ import (
 
 const (
 	DatabaseName = "reddit-feed-test"
+	CollName     = "posts"
 )
 
-func TestPosts_Create(t *testing.T) {
+var (
+	dbClient *mongo.Client
+)
+
+func TestMain(m *testing.M) {
 
 	// load application configurations
 	cfg, err := config.Load("../../../../config/local.yml", nil)
@@ -32,6 +38,12 @@ func TestPosts_Create(t *testing.T) {
 	clientOpts.SetMaxPoolSize(5)
 
 	client, err := mongo.Connect(context.Background(), clientOpts)
+	defer func() {
+		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
+		defer cancel()
+		_ = client.Disconnect(ctx)
+	}()
+
 	if err != nil {
 		log.Fatal(err.Error())
 	}
@@ -39,7 +51,16 @@ func TestPosts_Create(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
 	defer cancel()
 	err = client.Ping(ctx, readpref.Primary())
-	require.NoError(t, err)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	dbClient = client
+
+	m.Run()
+}
+
+func TestPosts_Create(t *testing.T) {
 
 	m := &models.Post{
 		Title:     "title",
@@ -54,11 +75,16 @@ func TestPosts_Create(t *testing.T) {
 
 	logger := logr.NewFactory(logr.Mock, "test")
 
-	repo := repository.New(logger, client, DatabaseName)
+	coll := db.New(logger, dbClient, DatabaseName, CollName)
+	repo := repository.New(logger, coll)
 
 	createdPost, err := repo.Create(context.Background(), m)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, createdPost.Id)
 	require.Equal(t, createdPost.Score, m.Score)
+
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*3)
+	_ = dbClient.Database(DatabaseName).Collection(CollName).Drop(ctx)
+
 }

@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"context"
 	"fmt"
+	"go.mongodb.org/mongo-driver/event"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 	"go.uber.org/zap"
 	"net/http"
@@ -58,8 +59,39 @@ func New(cfg *config.Config, ctx context.Context) *App {
 
 func (a *App) initMongoDb(ctx context.Context) error {
 
-	clientOpts := options.Client()
-	clientOpts.ApplyURI(a.config.MongoAddr)
+	//startedCommands := make(map[int64]bson.Raw)
+	//cmdMonitor := &event.CommandMonitor{
+	//	Started: func(_ context.Context, evt *event.CommandStartedEvent) {
+	//		startedCommands[evt.RequestID] = evt.Command
+	//	},
+	//	Succeeded: func(_ context.Context, evt *event.CommandSucceededEvent) {
+	//		a.log.Default().Debug(fmt.Sprintf("Command: %v Reply: %v\n",
+	//			startedCommands[evt.RequestID].String(),
+	//			evt.Reply.String()),
+	//		)
+	//	},
+	//	Failed: func(_ context.Context, evt *event.CommandFailedEvent) {
+	//		a.log.Default().Debug(fmt.Sprintf("Command: %v Failure: %v\n",
+	//			startedCommands[evt.RequestID].String(),
+	//			evt.Failure,
+	//		))
+	//	},
+	//}
+
+	heartBeatFailEvent := &event.ServerMonitor{
+		ServerHeartbeatFailed: func(failedEvent *event.ServerHeartbeatFailedEvent) {
+			a.log.Default().Error(fmt.Sprintf("mongo db server is not responding, cause: %s", failedEvent.Failure.Error()))
+		},
+		ServerHeartbeatStarted: func(startedEvent *event.ServerHeartbeatStartedEvent) {
+			a.log.Default().Debug(fmt.Sprintf("checking mongo db server %v", startedEvent.ConnectionID))
+		},
+		ServerHeartbeatSucceeded: func(succeededEvent *event.ServerHeartbeatSucceededEvent) {
+			a.log.Default().Debug(fmt.Sprintf("mongo db server is online %v", succeededEvent.ConnectionID))
+		},
+	}
+
+	clientOpts := options.Client().SetHeartbeatInterval(time.Second * 30)
+	clientOpts.ApplyURI(a.config.MongoAddr).SetServerMonitor(heartBeatFailEvent) //.SetMonitor(cmdMonitor)
 	clientOpts.SetMaxPoolSize(20)
 
 	client, err := mongo.Connect(ctx, clientOpts)
@@ -74,12 +106,16 @@ func (a *App) initMongoDb(ctx context.Context) error {
 
 		if err = client.Disconnect(ctx); err != nil {
 			a.log.Default().Debug("mongo client disconnect", zap.String("err", err.Error()))
+			return
 		}
+
+		a.log.Default().Info("mongo-db client shutdown")
+
 	}
 
 	a.tearDowns = append(a.tearDowns, tr)
 
-	// Ping the primary
+	// Ping the database
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*8)
 	defer cancel()
 	if err := client.Ping(ctx, readpref.Primary()); err != nil {
@@ -89,7 +125,7 @@ func (a *App) initMongoDb(ctx context.Context) error {
 
 	a.mongoClient = client
 
-	// todo add health checker for db connection availability and also for the case when the mongo db shuts down
+	// todo add health checker for db connection availability and also for the case when the mongo db shuts down unexpectedly
 
 	return err
 }

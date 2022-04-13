@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"github.com/aliykh/reddit-feed/internal/driver/db"
 	postsHttp "github.com/aliykh/reddit-feed/internal/posts/delivery/http"
 	"github.com/aliykh/reddit-feed/internal/posts/repository"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,9 +27,9 @@ import (
 )
 
 type Server struct {
-	cfg    *config.Config
-	logger *log.Factory
-	router *gin.Engine
+	cfg      *config.Config
+	logger   *log.Factory
+	router   *gin.Engine
 	dbClient *mongo.Client
 }
 
@@ -39,8 +40,8 @@ func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 func New(cfg *config.Config, logger *log.Factory, dbClient *mongo.Client) (*Server, error) {
 
 	sv := &Server{
-		cfg:    cfg,
-		logger: logger,
+		cfg:      cfg,
+		logger:   logger,
 		dbClient: dbClient,
 	}
 
@@ -83,7 +84,9 @@ func (s *Server) setupValidators() {
 
 func (s *Server) mapHandlers() {
 
-	postRepo := repository.New(s.logger, s.dbClient, s.cfg.DatabaseName)
+	postsCollectionRepo := db.New(s.logger, s.dbClient, s.cfg.DatabaseName, "posts")
+
+	postRepo := repository.New(s.logger, postsCollectionRepo)
 	postsUC := usecase.New(s.logger, postRepo)
 	postsHandlers := postsHttp.New(s.logger, postsUC)
 

@@ -75,7 +75,7 @@ func (h *handlers) Generate(c *gin.Context) {
 		Size: 25,
 	}
 
-	if err := c.BindQuery(pg); err != nil {
+	if err := c.ShouldBindQuery(pg); err != nil {
 		h.logger.Default().Error("pagination query binding err", zap.String("err", err.Error()))
 		helpers.RespondError(c, err)
 		return
@@ -84,7 +84,7 @@ func (h *handlers) Generate(c *gin.Context) {
 	res, err := h.uc.GenerateFeeds(c.Request.Context(), pg)
 
 	if err != nil {
-		h.logger.Default().Error("generate feeds", zap.String("err", err.Error()))
+		//h.logger.Default().Error("generate feeds", zap.String("err", err.Error()))
 		helpers.RespondError(c, err)
 		return
 	}

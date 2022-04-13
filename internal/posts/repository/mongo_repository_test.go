@@ -2,227 +2,221 @@ package repository
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
+	"errors"
 	logr "github.com/aliykh/log"
+	"github.com/aliykh/reddit-feed/internal/driver/db/mock"
 	"github.com/aliykh/reddit-feed/internal/posts/models"
 	"github.com/aliykh/reddit-feed/pkg/pagination"
+	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
-	"github.com/strikesecurity/strikememongo"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
-	"go.mongodb.org/mongo-driver/mongo/readpref"
-	"io/ioutil"
-	"log"
-	"os"
-	"strings"
 	"testing"
-	"time"
 )
 
-const (
-	// collection constants
-	postsCollectionName = "posts"
-	databaseName        = "reddit-feed-test"
-)
-
-var (
-
-	// collections variables
-	postsCollection *mongo.Collection
-	mongoURI        = ""
-	database        *mongo.Database
-	mongoClient     *mongo.Client
-)
-
-func TestMain(m *testing.M) {
-	mongoServer, err := strikememongo.StartWithOptions(&strikememongo.Options{MongoVersion: "4.2.0", ShouldUseReplica: true})
-	if err != nil {
-		log.Fatal(err)
-	}
-	mongoURI = mongoServer.URIWithRandomDB()
-
-	defer mongoServer.Stop()
-
-	setup()
-	m.Run()
-}
-
-func setup() {
-	startApplication()
-	createCollections()
-	cleanup()
-}
-
-// startApplication initializes the engine and the necessary components for the (test) service to work
-func startApplication() {
-	// Initialize Database (memongodb)
-	dbClient, ctx, err := initDB()
-	if err != nil {
-		log.Fatal("error connecting to database", err)
-	}
-
-	err = dbClient.Ping(ctx, readpref.Primary())
-	if err != nil {
-		log.Fatal("error connecting to database", err)
-	}
-
-	mongoClient = dbClient
-	database = dbClient.Database(databaseName)
-}
-
-func initDB() (client *mongo.Client, ctx context.Context, err error) {
-	uri := fmt.Sprintf("%s%s", mongoURI, "?retryWrites=false")
-	client, err = mongo.NewClient(options.Client().ApplyURI(uri))
-	if err != nil {
-		return
-	}
-
-	ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
-	err = client.Connect(ctx)
-	if err != nil {
-		return
-	}
-
-	return
-}
-
-// createCollections cretaes the necessary collections to be used during tests
-func createCollections() {
-	err := database.CreateCollection(context.Background(), postsCollectionName)
-	if err != nil {
-		fmt.Printf("error creating collection: %s", err.Error())
-	}
-
-	postsCollection = database.Collection(postsCollectionName)
-}
-
-// ----------------------------
-// 		TEAR DOWN FUNCTION
-// ----------------------------
-func cleanup() {
-	postsCollection.DeleteMany(context.Background(), bson.M{})
-}
-
-// ----------------------------
-// 		TEST THE ACTUAL REPOSITORY
-// ----------------------------
-func TestRepo_Create(t *testing.T) {
-
-	m := &models.Post{
-		Title:     "title",
-		Subreddit: "/r/subreddit",
-		Content:   "content text",
+// posts - for testing purposes
+var posts = []*models.Post{
+	{
+		Title:     "title1",
+		Author:    "t2_author1",
+		Link:      "www.example.com",
+		Subreddit: "/r/nsfw",
+		Score:     new(int),
 		Promoted:  new(bool),
 		NSFW:      new(bool),
+	},
+	{
+		Title:     "title2",
+		Author:    "t2_author2",
+		Link:      "www.example.com",
+		Subreddit: "/r/nsfw2",
 		Score:     new(int),
-	}
-	*m.Score = 100
-	m.GenerateAuthorName()
-
-	logger := logr.NewFactory(logr.Mock, "test")
-
-	repo := New(logger, mongoClient, databaseName)
-
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
-
-	createdPost, err := repo.Create(ctx, m)
-
-	require.NoError(t, err)
-	require.NotEmpty(t, createdPost.Id)
-	require.Equal(t, *createdPost.Score, 100)
-
+		Promoted:  new(bool),
+		NSFW:      new(bool),
+	},
 }
 
-func TestRepo_GenerateFeeds(t *testing.T) {
-	cleanup()
+func TestRepo_Create(t *testing.T) {
+	var logger = logr.NewFactory(logr.Mock, "test")
 
-	posts := prepareDataInDbForGeneratePosts(t, "sample.json")
+	t.Parallel()
 
-	// ----------------------------
-	// 		TEST THE REQUIREMENTS POINTS 3-4
-	// ----------------------------
-	logger := logr.NewFactory(logr.Mock, "test")
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	repo := New(logger, mongoClient, databaseName)
+	coll := mock.NewMockCollection(ctrl)
 
-	postsInDb, err := repo.GenerateFeeds(context.Background(), &pagination.Query{
-		Size: 25,
-		Page: 0,
+	repo := New(logger, coll)
+
+	t.Run("ok", func(t *testing.T) {
+
+		p := &models.Post{
+			Title:     "title",
+			Author:    "t2_author",
+			Link:      "www.example.com",
+			Subreddit: "/r/nsfw",
+			Score:     new(int),
+			Promoted:  new(bool),
+			NSFW:      new(bool),
+		}
+
+		objcId := primitive.NewObjectID()
+		coll.EXPECT().InsertOne(gomock.Any(), gomock.Eq(p)).Return(&mongo.InsertOneResult{InsertedID: objcId}, nil)
+		coll.EXPECT().FindOne(gomock.Any(), bson.D{{"_id", objcId}}, gomock.Eq(&models.Post{})).Return(nil).SetArg(2, *p)
+
+		result, err := repo.Create(context.Background(), p)
+
+		require.NoError(t, err)
+		require.Equal(t, p, result)
+
 	})
 
-	require.NoError(t, err)
-	require.Equal(t, len(posts), len(postsInDb.Posts))
-	require.Equal(t, true, *postsInDb.Posts[1].Promoted)
-	require.Equal(t, true, *postsInDb.Posts[15].Promoted)
+	t.Run("fails", func(t *testing.T) {
 
-}
+		coll.EXPECT().InsertOne(gomock.Any(), gomock.Nil()).Return(nil, mongo.ErrNilDocument)
 
-func TestRepo_GenerateFeeds_NSFW(t *testing.T) {
-	cleanup()
-
-	posts := prepareDataInDbForGeneratePosts(t, "sample-2.json")
-
-	// ----------------------------
-	// 		TEST THE REQUIREMENTS POINTS 5
-	// ----------------------------
-	logger := logr.NewFactory(logr.Mock, "test")
-
-	repo := New(logger, mongoClient, databaseName)
-
-	postsInDb, err := repo.GenerateFeeds(context.Background(), &pagination.Query{
-		Size: 25,
-		Page: 0,
+		_, err := repo.Create(context.Background(), nil)
+		require.True(t, errors.Is(err, mongo.ErrNilDocument))
 	})
 
-	require.NoError(t, err)
-	require.Equal(t, len(posts)-1, len(postsInDb.Posts)) // 21 - minus one of the promoted posts due to the fact that one of its adjacent posts is NSFW type
-	require.Equal(t, false, *postsInDb.Posts[1].Promoted)
-	require.Equal(t, true, *postsInDb.Posts[15].Promoted)
+	t.Run("fails-findone", func(t *testing.T) {
+
+		p := &models.Post{}
+
+		objcId := primitive.NewObjectID()
+		coll.EXPECT().InsertOne(gomock.Any(), gomock.Eq(p)).Return(&mongo.InsertOneResult{InsertedID: objcId}, nil)
+
+		coll.EXPECT().FindOne(gomock.Any(), bson.D{{"_id", objcId}}, gomock.Eq(&models.Post{})).Return(mongo.ErrNoDocuments)
+
+		_, err := repo.Create(context.Background(), p)
+		require.True(t, errors.Is(err, mongo.ErrNoDocuments))
+
+	})
 
 }
 
-func prepareDataInDbForGeneratePosts(t *testing.T, fileName string) []models.Post {
-	// ----------------------------
-	// 		DATA PREP IN THE DB
-	// ----------------------------
-	f, err := os.OpenFile(fileName, os.O_RDONLY, os.ModePerm)
+func TestRepo_CountDocuments(t *testing.T) {
 
-	require.NoError(t, err)
-	defer f.Close()
+	var logger = logr.NewFactory(logr.Mock, "test")
 
-	data, err := ioutil.ReadAll(f)
-	require.NoError(t, err)
+	t.Parallel()
 
-	var posts = make([]models.Post, 0, 30)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-	err = json.Unmarshal(data, &posts)
-	require.NoError(t, err)
+	coll := mock.NewMockCollection(ctrl)
 
-	bulkWriteData := make([]mongo.WriteModel, 0, 30)
-	for _, v := range posts {
-		op := mongo.NewInsertOneModel()
-		op.SetDocument(v)
-		bulkWriteData = append(bulkWriteData, op)
-	}
+	repo := New(logger, coll)
 
-	ctx, _ := context.WithTimeout(context.Background(), time.Second*5)
-	coll := mongoClient.Database(databaseName).Collection(collectionName)
-	result, err := coll.BulkWrite(ctx, bulkWriteData)
-	require.NoError(t, err)
-	require.Equal(t, int64(len(posts)), result.InsertedCount)
+	t.Run("ok", func(t *testing.T) {
 
-	return posts
+		filter := bson.D{{"promoted", false}}
+
+		coll.EXPECT().CountDocuments(gomock.Any(), gomock.Eq(filter)).Return(int64(20), nil)
+
+		c, err := repo.CountDocuments(context.Background(), filter)
+
+		require.NoError(t, err)
+		require.Equal(t, c, int64(20))
+
+	})
+
+	t.Run("error", func(t *testing.T) {
+
+		filter := bson.D{{"promoted", false}}
+
+		coll.EXPECT().CountDocuments(gomock.Any(), gomock.Eq(filter)).Return(int64(0), mongo.ErrNilDocument)
+
+		c, err := repo.CountDocuments(context.Background(), filter)
+
+		require.Equal(t, c, int64(0))
+		require.True(t, errors.Is(err, mongo.ErrNilDocument))
+	})
+
 }
 
-func TestGenerateAuthorName(t *testing.T) {
+func TestRepo_Aggregate(t *testing.T) {
 
-	m := &models.Post{}
-	m.GenerateAuthorName()
+	var logger = logr.NewFactory(logr.Mock, "test")
 
-	require.NotEmpty(t, m.Author)
-	require.True(t, strings.HasPrefix(m.Author, "t2_"))
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	coll := mock.NewMockCollection(ctrl)
+
+	repo := New(logger, coll)
+
+	t.Run("ok", func(t *testing.T) {
+
+		matchStage := bson.D{{"$match", bson.D{{"promoted", true}}}}
+		sampleStage := bson.D{{"$sample", bson.D{{"size", 2}}}}
+
+		coll.EXPECT().Aggregate(gomock.Any(), gomock.Eq(mongo.Pipeline([]bson.D{matchStage, sampleStage})), gomock.Any()).Return(nil).SetArg(2, posts)
+
+		result, err := repo.Aggregate(context.Background(), matchStage, sampleStage)
+
+		require.NoError(t, err)
+		require.Equal(t, result, posts)
+	})
+
+	t.Run("error", func(t *testing.T) {
+
+		matchStage := bson.D{{"$match", bson.D{{"promoted", true}}}}
+		sampleStage := bson.D{{"$sample", bson.D{{"size", 2}}}}
+
+		coll.EXPECT().Aggregate(gomock.Any(), gomock.Eq(mongo.Pipeline([]bson.D{matchStage, sampleStage})), gomock.Any()).Return(mongo.CommandError{})
+		result, err := repo.Aggregate(context.Background(), matchStage, sampleStage)
+
+		require.Empty(t, result)
+		require.True(t, errors.As(err, &mongo.CommandError{}))
+
+	})
+
+}
+
+func TestRepo_FindAll(t *testing.T) {
+
+	var logger = logr.NewFactory(logr.Mock, "test")
+
+	t.Parallel()
+
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+
+	coll := mock.NewMockCollection(ctrl)
+
+	repo := New(logger, coll)
+
+	t.Run("ok", func(t *testing.T) {
+
+		query := &pagination.Query{
+			Size: 25,
+			Page: 0,
+		}
+
+		filter := bson.D{{"promoted", false}}
+		opts := options.Find().SetSort(bson.D{{"score", -1}}).SetSkip(int64(query.GetOffset())).SetLimit(int64(query.GetSize()))
+
+		coll.EXPECT().Find(gomock.Any(), gomock.Eq(filter), gomock.Eq(&[]*models.Post{}), opts).Return(nil).SetArg(2, posts)
+
+		result, err := repo.FindAll(context.Background(), filter, query)
+
+		require.NoError(t, err)
+		require.NotEmpty(t, result)
+		require.Equal(t, posts, result)
+
+	})
+
+	t.Run("error", func(t *testing.T) {
+
+		coll.EXPECT().Find(gomock.Any(), gomock.Any(), gomock.Any(), gomock.Any()).Return(mongo.ErrNoDocuments)
+		result, err := repo.FindAll(context.Background(), bson.D{}, &pagination.Query{})
+		require.Empty(t, result)
+		require.True(t, errors.Is(err, mongo.ErrNoDocuments))
+	})
 
 }

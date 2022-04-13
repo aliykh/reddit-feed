@@ -3,11 +3,13 @@ package http
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"github.com/aliykh/log"
 	"github.com/aliykh/reddit-feed/internal/posts/mock"
 	"github.com/aliykh/reddit-feed/internal/posts/models"
 	"github.com/aliykh/reddit-feed/pkg/customErrors"
 	"github.com/aliykh/reddit-feed/pkg/helpers"
+	"github.com/aliykh/reddit-feed/pkg/pagination"
 	"github.com/aliykh/reddit-feed/pkg/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -204,4 +206,117 @@ func TestHandlers_Create_Validation_Errs(t *testing.T) {
 }
 
 func TestHandlers_Generate(t *testing.T) {
+
+	// pagination
+	query := &pagination.Query{
+		Size: 2,
+		Page: 0,
+	}
+
+	// get use case
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
+	mockPostUC := mock.NewMockUseCase(ctrl)
+
+
+	//
+	logger := log.NewFactory(log.Mock, "test")
+
+	postHandlers := New(logger, mockPostUC)
+
+	router.GET("/generate/ok", postHandlers.Generate)
+
+
+	t.Run("ok", func(t *testing.T) {
+
+		// model
+		feed := &models.Feed{
+			TotalCount: 10,
+			TotalPages: 1,
+			Page:       0,
+			Size:       2,
+			HasMore:    true,
+			Posts: []*models.Post{
+				{
+					Id:        "6252a65cc511344c065986f3",
+					Title:     "Title20",
+					Author:    "t2_6wmjk11m",
+					Link:      "https://www.example.com",
+					Subreddit: "/r/subreddit",
+					Score:     new(int),
+					Promoted:  new(bool),
+					NSFW:      new(bool),
+				},
+				{
+					Id:        "1234",
+					Title:     "Title1234",
+					Author:    "t2_6wmjk11m",
+					Link:      "https://www.example.com",
+					Subreddit: "/r/subreddit12345",
+					Score:     new(int),
+					Promoted:  new(bool),
+					NSFW:      new(bool),
+				},
+			},
+		}
+
+		mockPostUC.EXPECT().GenerateFeeds(context.Background(), gomock.Eq(query)).Return(feed, nil)
+
+		req, err := utils.MakeRequest(utils.GET, utils.FORM, "/generate/ok", *query)
+		require.NoError(t, err)
+
+		resp, err := utils.InvokeHandler(req, router)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, resp.StatusCode)
+
+		resFeed := &models.Feed{}
+
+		err = json.Unmarshal(resp.Body, &resFeed)
+		require.NoError(t, err)
+		reflect.DeepEqual(feed, resFeed)
+
+	})
+
+
+	t.Run("usecase fail", func(t *testing.T) {
+
+		mockPostUC.EXPECT().GenerateFeeds(context.Background(), gomock.Eq(query)).Return(nil, errors.New("fails"))
+
+		req, err := utils.MakeRequest(utils.GET, utils.FORM, "/generate/ok", *query)
+		require.NoError(t, err)
+
+		resp, err := utils.InvokeHandler(req, router)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusInternalServerError, resp.StatusCode)
+
+		errData := &customErrors.ErrorResponse{}
+		err = json.Unmarshal(resp.Body, &errData)
+		require.NoError(t, err)
+		require.Equal(t, customErrors.NewInternalServerError(), errData)
+
+	})
+
+
+	t.Run("query validation fails", func(t *testing.T) {
+
+		req, err := utils.MakeRequest(utils.GET, utils.FORM, "/generate/ok", map[string]string{
+			"size": "abs",
+		})
+
+		require.NoError(t, err)
+
+		resp, err := utils.InvokeHandler(req, router)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+
+		errData := &customErrors.ErrorResponse{}
+		err = json.Unmarshal(resp.Body, &errData)
+		require.NoError(t, err)
+		require.Equal(t, customErrors.New(http.StatusBadRequest, errors.New(`strconv.ParseInt: parsing "abs": invalid syntax`)), errData)
+
+	})
+
+
+
 }

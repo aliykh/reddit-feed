@@ -3,12 +3,11 @@ package customErrors
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	ut "github.com/go-playground/universal-translator"
 	"github.com/go-playground/validator/v10"
 	"io"
 	"net/http"
-	"reflect"
+	"strconv"
 )
 
 var Trans ut.Translator
@@ -16,8 +15,8 @@ var Trans ut.Translator
 // ParseError - parses error and returns appropriate views.ErrorResponse.
 func ParseError(err error) *ErrorResponse {
 
-	t := reflect.TypeOf(err)
-	fmt.Println(t)
+	//t := reflect.TypeOf(err)
+	//fmt.Println(t)
 
 	switch t := err.(type) {
 
@@ -27,21 +26,19 @@ func ParseError(err error) *ErrorResponse {
 	case *json.UnmarshalTypeError:
 		return handleUnMarshalTypeError(t)
 
-	case *json.SyntaxError:
-		// fmt.Println("invalid unmarshal error")
-		return New(http.StatusBadRequest, err)
+	case *strconv.NumError:
+		return New(http.StatusBadRequest, t)
 
+	case *json.SyntaxError:
+		return New(http.StatusBadRequest, err)
 	case *ErrorResponse:
 		return t
-
 	default:
-
 		switch {
 		case errors.Is(err, io.EOF):
 			return New(http.StatusBadRequest, err)
 		default:
 			return NewInternalServerError()
-
 		}
 	}
 }

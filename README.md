@@ -1,9 +1,16 @@
 # reddit-feed
 
-#### Environment setup - MongoDB and Mongo express
-
+## Docker-compose
+Runs mongo-db and mongo-express
 ```sh
 docker-compose up -d
+```
+
+## Migrations
+
+#### Install [Golang-migrate]
+```shell
+brew install golang-migrate
 ```
 
 #### Run migrations
@@ -18,7 +25,7 @@ make migrate-up
 make migrate-down
 ```
 
-#### Run tests
+## Run tests
 
 Run all tests except integration file (excluded):
 
@@ -32,7 +39,7 @@ Run integration tests:
 make run-integration-tests
 ```
 
-### Run the app
+## Run the app
 
 ```shell
 make run
@@ -41,3 +48,5 @@ make run
 ### Notes
 
 - Remove test data from the cache - $go clean -testcache
+
+[Golang-migrate]: <https://github.com/golang-migrate/migrate>
