@@ -1,9 +1,10 @@
-ARG PROXY='https://proxy.golang.org,direct'
 FROM golang:1.16-alpine as build
+
+ARG PROXY=https://proxy.golang.org,direct
 
 WORKDIR /app
 
-RUN export GOPROXY=$PROXY
+ENV GOPROXY=${PROXY}
 
 COPY go.mod go.sum ./
 
