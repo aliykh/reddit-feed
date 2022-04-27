@@ -1,5 +1,15 @@
 version: '3.7'
 services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    # container_name: reddit-feed-app
+    # image: 192.168.1.4:8078/reddit-feed_app
+    ports:
+    - 7077:7077
+    depends_on:
+      - mongodb
   mongodb:
     container_name: mongo-dev
     image: mongo:latest
@@ -7,8 +17,8 @@ services:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: rootpassword
       MONGO_INITDB_DATABASE: reddit-feed
-    ports:
-      - 27017:27017
+    # ports:
+    #   - 27017:27017
     volumes:
       - mongodb_data_container:/data/db
   mongo-express:

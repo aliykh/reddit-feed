@@ -1,3 +1,4 @@
-mongo_addr: "mongodb://root:rootpassword@localhost:27017/"
+# mongo_addr: "mongodb://root:rootpassword@host.docker.internal:27017/"
+mongo_addr: "mongodb://root:rootpassword@mongodb/"
 log_level: "debug"
 db_name: "reddit-feed"

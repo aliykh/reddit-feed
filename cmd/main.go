@@ -4,12 +4,13 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/aliykh/reddit-feed/api/docs"
-	"github.com/aliykh/reddit-feed/internal/bootstrap"
-	"github.com/aliykh/reddit-feed/internal/config"
 	"log"
 	"os"
 	"os/signal"
+
+	"github.com/aliykh/reddit-feed/api/docs"
+	"github.com/aliykh/reddit-feed/internal/bootstrap"
+	"github.com/aliykh/reddit-feed/internal/config"
 )
 
 var flagConfig = flag.String("config", "./config/local.yml", "path to the config file")
