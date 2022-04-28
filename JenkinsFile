@@ -38,7 +38,7 @@ pipeline {
         stage('build-deploy-nexus'){
             when{
                 expression {
-                    params.deploy == 'nexus'
+                    env.BRANCH_NAME == 'dev' && params.deploy == 'nexus'
                 }
             }
             steps{
@@ -51,7 +51,7 @@ pipeline {
         stage('build-deploy-docker'){
             when{
                 expression {
-                    params.deploy == 'docker'
+                    env.BRANCH_NAME == 'master' && params.deploy == 'docker'
                 }
             }
             steps{
