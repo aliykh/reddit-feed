@@ -24,3 +24,5 @@ def buildDeployDocker() {
     sh "echo $DOCKER_HUB_CREDS_PSW | docker login -u $DOCKER_HUB_CREDS_USR --password-stdin"
     sh 'docker push alioy/reddit-feed:1.1'
 }
+
+return this
