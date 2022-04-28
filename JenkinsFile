@@ -1,0 +1,27 @@
+pipeline {
+    agent any
+
+    parameters{
+        choice(name: 'deploy', choices: ['nexus', 'docker'], description: 'please specify where to deploy the app')
+    }
+
+    stages {
+        stage('Test'){
+            steps{
+                sh 'make run-tests && make run-integration-tests'
+            }
+        }
+
+        stage('Build'){
+
+            steps{
+                echo 'building the app'
+            }
+
+        }
+
+        stage('Deploy'){
+            echo 'deploying the app'
+        }
+    }
+}
