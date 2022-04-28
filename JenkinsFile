@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools{
+        go 'go-v-1.18.1'
+    }
+
     parameters{
         choice(name: 'deploy', choices: ['nexus', 'docker'], description: 'please specify where to deploy the app')
     }
