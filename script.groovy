@@ -6,8 +6,8 @@ def buildDeployNx() {
     //     sh 'docker push 0.0.0.0:8083/reddit-feed:1.1'
     // }
 
-    sh "docker build --build-arg PROXY=$NEXUS_GO_PROXY -t $NEXUS_DOCKER_HOST/reddit-feed:1.1 ."
-    sh "echo $NEXUS_RM_CREDS_PSW | docker login -u $NEXUS_RM_CREDS_USR --password-stdin $NEXUS_DOCKER_HOST"
+    sh 'docker build --build-arg PROXY=$NEXUS_GO_PROXY -t $NEXUS_DOCKER_HOST/reddit-feed:1.1 .'
+    sh 'echo $NEXUS_RM_CREDS_PSW | docker login -u $NEXUS_RM_CREDS_USR --password-stdin $NEXUS_DOCKER_HOST'
     sh 'docker push $NEXUS_DOCKER_HOST/reddit-feed:1.1'
 
 }
@@ -20,8 +20,8 @@ def buildDeployDocker() {
     //     sh 'docker push alioy/reddit-feed:1.1'
     // }
 
-    sh "docker build --build-arg PROXY=$NEXUS_GO_PROXY -t alioy/reddit-feed:1.1 ."
-    sh "echo $DOCKER_HUB_CREDS_PSW | docker login -u $DOCKER_HUB_CREDS_USR --password-stdin"
+    sh 'docker build --build-arg PROXY=$NEXUS_GO_PROXY -t alioy/reddit-feed:1.1 .'
+    sh 'echo $DOCKER_HUB_CREDS_PSW | docker login -u $DOCKER_HUB_CREDS_USR --password-stdin'
     sh 'docker push alioy/reddit-feed:1.1'
 }
 
