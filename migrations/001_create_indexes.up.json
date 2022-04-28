@@ -1,0 +1,19 @@
+[{
+  "createIndexes": "posts",
+  "indexes": [
+    {
+      "key": {
+        "promoted": 1
+      },
+      "name": "promoted_index",
+      "background": true
+    },
+    {
+      "key": {
+        "score": 1
+      },
+      "name": "score_sort_by_desc_index",
+      "background": true
+    }
+  ]
+}]

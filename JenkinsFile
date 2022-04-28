@@ -1,0 +1,64 @@
+#!/usr/bin/env groovy
+
+def gv 
+
+pipeline {
+    agent any
+
+    environment {
+        DOCKER_HUB_CREDS = credentials('docker-hub')
+        NEXUS_RM_CREDS = credentials('nexus-user')
+        NEXUS_DOCKER_HOST = '0.0.0.0:8083'
+        NEXUS_GO_PROXY = 'http://172.17.0.1:8081/repository/go-proxy/'
+    }
+
+    tools{
+        go 'go-v-1.18.1'
+    }
+
+    parameters{
+        choice(name: 'deploy', choices: ['nexus', 'docker'], description: 'please specify where to deploy the app')
+    }
+
+    stages {
+        stage('init'){
+            steps{
+                script {
+                    gv = load "script.groovy"
+                }
+            }
+        }
+        
+        stage('Test'){
+            steps{
+                sh 'make run-tests'
+            }
+        }
+
+        stage('build-deploy-nexus'){
+            when{
+                expression {
+                    env.BRANCH_NAME == 'dev' && params.deploy == 'nexus'
+                }
+            }
+            steps{
+               script{
+                    gv.buildDeployNx()
+               }
+            }
+        }
+
+        stage('build-deploy-docker'){
+            when{
+                expression {
+                    env.BRANCH_NAME == 'master' && params.deploy == 'docker'
+                }
+            }
+            steps{
+              script{
+                  gv.buildDeployDocker()
+              }
+            }
+        }
+    }
+}

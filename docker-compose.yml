@@ -1,0 +1,39 @@
+version: '3.7'
+services:
+  app:
+    build:
+      dockerfile: Dockerfile
+      context: .
+    # container_name: reddit-feed-app
+    # image: 192.168.1.4:8078/reddit-feed_app
+    ports:
+    - 7077:7077
+    depends_on:
+      - mongodb
+  mongodb:
+    container_name: mongo-dev
+    image: mongo:latest
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: rootpassword
+      MONGO_INITDB_DATABASE: reddit-feed
+    # ports:
+    #   - 27017:27017
+    volumes:
+      - mongodb_data_container:/data/db
+  mongo-express:
+    container_name: mongo-express
+    image: mongo-express
+    restart: always
+    depends_on:
+      - mongodb
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=root
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=rootpassword
+      - ME_CONFIG_MONGODB_SERVER=mongo-dev
+      - ME_CONFIG_BASICAUTH_USERNAME=admin
+      - ME_CONFIG_BASICAUTH_PASSWORD=pass
+    ports:
+      - '8081:8081'
+volumes:
+  mongodb_data_container:
