@@ -1,5 +1,16 @@
+#!/usr/bin/env groovy
+
+def gv 
+
 pipeline {
     agent any
+
+    environment {
+        DOCKER_HUB_CREDS = credentials('docker-hub')
+        NEXUS_RM_CREDS = credentials('nexus-user')
+        NEXUS_DOCKER_HOST = '0.0.0.0:8083'
+        NEXUS_GO_PROXY = 'http://172.17.0.1:8081/repository/go-proxy/'
+    }
 
     tools{
         go 'go-v-1.18.1'
@@ -10,47 +21,43 @@ pipeline {
     }
 
     stages {
+        stage('init'){
+            steps{
+                script {
+                    gv = load "script.groovy"
+                }
+            }
+        }
+        
         stage('Test'){
             steps{
                 sh 'make run-tests'
             }
         }
 
-        stage('Build-nexus'){
+        stage('build-deploy-nexus'){
             when{
                 expression {
                     params.deploy == 'nexus'
                 }
             }
             steps{
-                echo "building image and uploading it into docker hosted repo on the Nexus server"
-                withCredentials([usernamePassword(credentialsId: 'nexus-user', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                    sh 'docker build --build-arg PROXY=http://172.17.0.1:8081/repository/go-proxy/ -t 0.0.0.0:8083/reddit-feed:1.1 .'
-                    sh "echo $PASS | docker login -u $USER --password-stdin 0.0.0.0:8083"
-                    sh 'docker push 0.0.0.0:8083/reddit-feed:1.1'
-                }
+               script{
+                    gv.buildDeployNx()
+               }
             }
         }
 
-        stage('Build-docker'){
+        stage('build-deploy-docker'){
             when{
                 expression {
                     params.deploy == 'docker'
                 }
             }
             steps{
-                echo "building image and uploading it into docker hub"
-                withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
-                    sh 'docker build --build-arg PROXY=http://172.17.0.1:8081/repository/go-proxy/ -t alioy/reddit-feed:1.1 .'
-                    sh "echo $PASS | docker login -u $USER --password-stdin"
-                    sh 'docker push alioy/reddit-feed:1.1'
-                }
-            }
-        }
-
-        stage('Deploy'){
-            steps{
-                echo 'deploying the app'
+              script{
+                  gv.buildDeployDocker()
+              }
             }
         }
     }
