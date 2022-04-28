@@ -8,16 +8,40 @@ pipeline {
     stages {
         stage('Test'){
             steps{
-               echo 'testing the app'
+                sh 'make run-tests && make run-integration-tests'
             }
         }
 
-        stage('Build'){
-
-            steps{
-                echo 'building the app'
+        stage('Build-nexus'){
+            when{
+                expression {
+                    params.deploy == 'nexus'
+                }
             }
+            steps{
+                echo "building image and uploading it into docker hosted repo on the Nexus server"
+                withCredentials([usernamePassword(credentialsId: 'nexus-user', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    sh 'docker build -t 0.0.0.0:8083/reddit-feed:1.1 --build-arg PROXY=http://172.17.0.1:8081/repository/go-proxy/ .'
+                    sh "echo $PASS | docker login -u $USER --password-stdin 0.0.0.0:8083"
+                    sh 'docker push 0.0.0.0:8083/reddit-feed:1.1'
+                }
+            }
+        }
 
+        stage('Build-docker'){
+            when{
+                expression {
+                    params.deploy == 'docker'
+                }
+            }
+            steps{
+                echo "building image and uploading it into docker hub"
+                withCredentials([usernamePassword(credentialsId: 'docker-hub', passwordVariable: 'PASS', usernameVariable: 'USER')]) {
+                    sh 'docker build -t alioy/reddit-feed:1.1 .'
+                    sh "echo $PASS | docker login -u $USER --password-stdin"
+                    sh 'docker push alioy/reddit-feed:1.1'
+                }
+            }
         }
 
         stage('Deploy'){
